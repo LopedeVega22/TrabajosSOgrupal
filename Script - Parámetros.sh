@@ -2,20 +2,64 @@
 
 if [ "$1" == "-install" ];then
  if [ "$2" == "-c" ];then
-  echo "Placeholder instalación con comandos"
+  sudo apt install apache2 apache2-doc
  elif [ "$2" == "-d" ];then
   echo "Placeholder instalación con Docker"
+ elif [ -z "$2" ];then
+  echo "Por favor escoja una opción, consulte --help"
  else
   echo "Esa opción no es válida, si necesita ayuda utilice --help al ejecutar el programa"
  fi
 elif [ "$1" == "-delete" ];then
- echo "Placeholder eliminación del servicio"
+ sudo apt remove apache2 apache2-doc
+ sudo apt autoremove
 elif [ "$1" == "-start" ];then
- echo "Placeholder puesta en marcha"
+ sudo systemctl start apache2
 elif [ "$1" == "-stop" ];then
- echo "Placeholder parada"
+ sudo systemctl stop apache2
 elif [ "$1" == "-logs" ];then
- echo "Placeholder consultar logs"
+ case $2 in
+  "-f")
+   if [ -z "$3" ];then
+    echo "Por favor escoja una fecha (YYYY-MM-DD)"
+   else
+    journalctl -u apache2 --since "$3 00:00:00" --until "$3 23:59:59"
+   fi
+   ;;
+  "-t")
+   echo "Elija el nivel de detalle:"
+   echo "- Errores críticos (-logs -t -e)"
+   echo "- Avisos y advertencias (-logs -t -a)"
+   echo "- Todo el historial (-logs -t -i)"
+   case $3 in
+    "-e")
+     # Nivel 3: Errores que impiden el funcionamiento
+     journalctl -u apache2 -p 3 -b
+     ;;
+    "-a")
+     # Nivel 4: Advertencias (warnings)
+     journalctl -u apache2 -p 4 -b
+     ;;
+    "-i")
+     # Muestra todo el log del arranque actual
+     journalctl -u apache2 -b
+     ;;
+    *)
+     echo "Tipo no reconocido, mostrando errores por defecto."
+     journalctl -u apache2 -p 3
+     ;;
+   esac
+   ;;
+  "-ip")
+   journalctl -u apache2 | grep "$3"
+   ;;
+  "-rt")
+   sudo journalctl -u apache2 -f
+   ;;
+  *)
+   echo "Esa opción no es válida, si necesita ayuda utilice --help al ejecutar el programa"
+   ;;
+ esac
 elif [ "$1" == "--help" ];then
  echo "------------------------------------------------------------------------------------"
  echo "-install Instalación del servicio con comandos (-install -c) o Docker (-install -d)"
@@ -29,8 +73,12 @@ elif [ "$1" == "--help" ];then
  echo "-logs Consultar logs:"
  echo "-f por fecha"
  echo "-t por tipo"
- echo "Incluir la fecha(YYYY-MM-DD) o el tipo como tercer parámetro"
+ echo "-ip por IP"
+ echo "-rt en tiempo real"
+ echo "Incluir la fecha(YYYY-MM-DD), el tipo o la IP como tercer parámetro"
  echo "------------------------------------------------------------------------------------"
+ elif [ -z "$1" ];then
+  echo "Por favor escoja una opción, consulte --help"
 else
 echo ""
 echo "Esa opción no es válida, si necesita ayuda utilice --help al ejecutar el programa"
