@@ -6,9 +6,8 @@ ip add
 systemctl status apache2
 fi
 #Menu de instalacion
-while [ "$#" == "0" ]
-do
-while [[ "$Menu1" != "Salir" ]]
+Menu1=""
+while [[ "$#" == "0" && "$Menu1" != "Salir" ]]
 do
 read -p "Opciones del menu del servicio:
     - Instalacion del servicio (Escriba: Descarga)
@@ -16,7 +15,7 @@ read -p "Opciones del menu del servicio:
     - Poner en marcha el servicio (Escriba: Correr)
     - Parar el servicio (Escriba: Parada)
     - Consultar los logs (Escriba: Logs)
-    - Salir (Escriba: contr + C)
+    - Salir (Escriba: Salir)
     Escriba lo que desea hacer: " Menu1
 #Menu descarga
 case $Menu1 in
@@ -32,6 +31,8 @@ case $Menu1 in
             ;;
             "Docker")
             echo "Esto es para instalar con docker"
+            ;;
+            "Salir")
             ;;
             *)
                 echo "El valor no es valido"
@@ -81,6 +82,8 @@ case $Menu1 in
                         # Muestra todo el log del arranque actual
                         journalctl -u apache2 -b
                     ;;
+                    "Salir")
+                    ;;
                     *)
                         echo "Tipo no reconocido, mostrando errores por defecto."
                          journalctl -u apache2 -p 3
@@ -97,18 +100,21 @@ case $Menu1 in
         esac
     ;;
     "Salir")
+    echo "Adios"
     ;;
     *)
         echo "El valor insertado no es valido"
     ;;
 esac
 done
-done
+if [ "$#" != "0" ];then
 if [ "$1" == "-install" ];then
  if [ "$2" == "-c" ];then
-  echo "Placeholder instalación con comandos"
+  sudo apt install apache2 apache2-doc
  elif [ "$2" == "-d" ];then
   echo "Placeholder instalación con Docker"
+ elif [ -z "$2" ];then
+  echo "Por favor escoja una opción, consulte --help"
  else
   echo "Esa opción no es válida, si necesita ayuda utilice --help al ejecutar el programa"
  fi
@@ -135,9 +141,11 @@ elif [ "$1" == "--help" ];then
  echo "-t por tipo"
  echo "Incluir la fecha(YYYY-MM-DD) o el tipo como tercer parámetro"
  echo "------------------------------------------------------------------------------------"
+ elif [ -z "$1" ];then
+  echo "Por favor escoja una opción, consulte --help"
 else
 echo ""
 echo "Esa opción no es válida, si necesita ayuda utilice --help al ejecutar el programa"
 echo ""
 fi
-
+fi
