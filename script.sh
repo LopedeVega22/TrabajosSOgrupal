@@ -1,3 +1,4 @@
+
 #!/bin/bash
 if [ "$#" == "0" ] ;then
 #Datos de red del equipo
@@ -30,7 +31,17 @@ case $Menu1 in
                 sudo apt install apache2 apache2-doc
             ;;
             "Docker")
-            echo "Esto es para instalar con docker"
+            if ! command -v docker &> /dev/null; then sudo apt update && sudo apt install -y docker.io; fi
+            if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^apache-container$"; then
+                echo "El contenedor 'apache-container' ya existe."
+            else
+                cat <<EOF > Dockerfile
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y apache2
+CMD ["apachectl", "-D", "FOREGROUND"]
+EOF
+                sudo docker build -t apache-asir . && sudo docker run -d -p 80:80 --name apache-container apache-asir
+            fi
             ;;
             "Salir")
             ;;
@@ -40,8 +51,9 @@ case $Menu1 in
         esac
     ;;
     "Borrar")
-        sudo apt remove apache2 apache2-doc
-        sudo apt autoremove
+        sudo apt remove apache2 apache2-doc && sudo apt autoremove
+        sudo docker stop apache-container 2>/dev/null && sudo docker rm apache-container 2>/dev/null
+        sudo docker rmi apache-asir 2>/dev/null
     ;;
     "Correr")
         sudo systemctl start apache2
@@ -113,16 +125,27 @@ if [ "$#" != "0" ];then
 if [ "$1" == "-install" ];then
  if [ "$2" == "-c" ];then
   sudo apt install apache2 apache2-doc
- elif [ "$2" == "-d" ];then
-  echo "Placeholder instalación con Docker"
+  elif [ "$2" == "-d" ];then
+   if ! command -v docker &> /dev/null; then sudo apt update && sudo apt install -y docker.io; fi
+   if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^apache-container$"; then
+       echo "El contenedor 'apache-container' ya existe."
+   else
+       cat <<EOF > Dockerfile
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y apache2
+CMD ["apachectl", "-D", "FOREGROUND"]
+EOF
+       sudo docker build -t apache-asir . && sudo docker run -d -p 80:80 --name apache-container apache-asir
+   fi
  elif [ -z "$2" ];then
   echo "Por favor escoja una opción, consulte --help"
  else
   echo "Esa opción no es válida, si necesita ayuda utilice --help al ejecutar el programa"
  fi
 elif [ "$1" == "-delete" ];then
- sudo apt remove apache2 apache2-doc
- sudo apt autoremove
+ sudo apt remove apache2 apache2-doc && sudo apt autoremove
+ sudo docker stop apache-container 2>/dev/null && sudo docker rm apache-container 2>/dev/null
+ sudo docker rmi apache-asir 2>/dev/null
 elif [ "$1" == "-start" ];then
  sudo systemctl start apache2
 elif [ "$1" == "-stop" ];then
